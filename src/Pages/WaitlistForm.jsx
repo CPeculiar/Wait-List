@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../services/firestore";
 import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 import { submitWaitListApplication } from "../services/firestore";
@@ -8,6 +8,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 const WaitlistForm = () => {
+  const [exchangeRates, setExchangeRates] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState({});
   const [formErrors, setFormErrors] = useState({});
@@ -15,20 +16,59 @@ const WaitlistForm = () => {
     name: "",
     email: "",
     phone: "",
-    amount: "",
+    currency: "NGN",
+    amount: "15500",
     paymentOption: "now", 
   });
 
+  
   const navigate = useNavigate();
+
+   // Fetch live exchange rates when component mounts
+   useEffect(() => {
+    const fetchExchangeRates = async () => {
+      try {
+        const response = await fetch("https://api.exchangerate-api.com/v4/latest/NGN");
+        const data = await response.json();
+        setExchangeRates(data.rates);
+        setIsLoading(false);
+      } catch (err) {
+        setError("Failed to fetch exchange rates. Please try again.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchExchangeRates();
+  }, []);
+
+  // Update the amount field based on selected currency
+  useEffect(() => {
+    if (formData.currency === "NGN") {
+      setFormData((prev) => ({ ...prev, amount: 15000 }));
+    } else if (exchangeRates[formData.currency]) {
+      const convertedAmount = Math.round(15500 * exchangeRates[formData.currency]);
+      setFormData((prev) => ({ ...prev, amount: convertedAmount }));
+    }
+  }, [formData.currency, exchangeRates]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when field is being edited
-    if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: "" }));
-    }
-  };
+    
+   // Update form data
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+// Clear error if user starts typing
+if (formErrors[name]) {
+  setFormErrors((prev) => ({
+    ...prev,
+    [name]: "",
+  }));
+}
+};
 
   const validatePhoneNumber = (phone) => {
     if (!phone.trim()) return "Enter a valid phone number";
@@ -48,7 +88,8 @@ const WaitlistForm = () => {
       errors.email = "Valid email is required";
     const phoneError = validatePhoneNumber(formData.phone);
     if (phoneError) errors.phone = phoneError;
-    if (!formData.amount.trim()) errors.amount = "Amount is required";
+    if (!formData.currency) errors.currency = "Please choose a currency";
+    if (!formData.amount) errors.amount = "Amount is required";
     if (!formData.paymentOption) errors.paymentOption = "Choose a preferred payment option";
 
     setFormErrors(errors);
@@ -73,18 +114,19 @@ const WaitlistForm = () => {
     });
 
     if (docRef.id) {
-      alert("Successfully joined the waitlist!");
+      alert("You have successfully joined the waitlist!");
 
 
       if (formData.paymentOption === "now") {
-        navigate(`/payment?name=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&amount=${encodeURIComponent(formData.amount)}`);
+        navigate(`/payment?name=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&currency=${encodeURIComponent(formData.currency)}&amount=${encodeURIComponent(formData.amount)}`);
       } else {
         // Reset form
         setFormData({
           name: "",
           email: "",
           phone: "",
-          amount: "",
+          currency: "NGN",
+          amount: "15000",
           paymentOption: "now",
         });
       }
@@ -215,16 +257,46 @@ const WaitlistForm = () => {
           </div> */}
 
           <div>
+        <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+          Select Currency
+        </label>
+        <select
+          name="currency"
+          id="currency"
+          value={formData.currency}
+          onChange={handleChange}
+          className={`mt-1 block w-full px-3 py-2 border ${
+                formErrors.currency ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+            >
+          <option value="NGN">Naira (₦)</option>
+          <option value="USD">US Dollar ($)</option>
+          <option value="EUR">Euro (€)</option>
+          <option value="GBP">British Pound (£)</option>
+          <option value="CAD">Canadian Dollar (C$) - CAD</option>
+        </select>
+        {formErrors.currency && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {formErrors.currency}
+              </p>
+            )}
+      </div>
+
+          <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
              Amount
             </label>
             <input
-              type="text"
+              type="number"
               name="amount"
               id="amount"
-              value={formData.amount}
-              onChange={handleChange}
-              placeholder="Enter an amount you can pay (mimimun of N10,000)"
+              // value={formData.amount || 15000} // Default to 15000
+              value={isLoading ? "Loading..." : formData.amount}
+              readOnly // Prevent user from editing
+              // onChange={handleChange}
+              // placeholder="Enter a minimum amount of ₦15,000"
+              //  min="15000"
               className={`mt-1 block w-full px-3 py-2 border ${
                 formErrors.amount ? 'border-red-300' : 'border-gray-300'
               } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
@@ -237,7 +309,9 @@ const WaitlistForm = () => {
             )}
           </div>
 
-          <div>
+         
+
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Payment Preference
             </label>
@@ -271,7 +345,7 @@ const WaitlistForm = () => {
                 {formErrors.paymentOption}
               </p>
             )}
-          </div>
+          </div> */}
 
           <button
             type="submit"
@@ -281,7 +355,7 @@ const WaitlistForm = () => {
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              'Join Waitlist'
+              'Proceed to Payment'
             )}
           </button>
         </form>

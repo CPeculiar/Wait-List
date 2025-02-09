@@ -10,6 +10,7 @@ const PaymentPage = () => {
   const [paymentData, setPaymentData] = useState({
     name: '',
     email: '',
+    currency: "",
     amount: '',
   });
 
@@ -19,12 +20,14 @@ useEffect(() => {
     // Get email and amount from URL parameters
     const name = searchParams.get('name');
     const email = searchParams.get('email');
+    const currency = searchParams.get('currency');
     const amount = searchParams.get('amount');
 
     if (name && email && amount) {
       setPaymentData({
         name: decodeURIComponent(name),
         email: decodeURIComponent(email),
+        currency: decodeURIComponent(currency),
         amount: parseInt(amount, 10),
       });
     }
@@ -67,7 +70,7 @@ useEffect(() => {
         tx_ref: `TX-${Date.now()}`,
         name: paymentData.name,
         amount: Number(paymentData.amount),
-        currency: "NGN",
+        currency: paymentData.currency,
         payment_options: "card, mobilemoney, ussd",
         customer: {
             name: paymentData.name,
@@ -86,7 +89,9 @@ useEffect(() => {
            navigate('/');
             // Reset form
             setPaymentData({
+                name: "",
                 email: "",
+                currency: "",
                 amount: "",
               });          
 
@@ -169,10 +174,19 @@ useEffect(() => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
+              Currency
+            </label>
+            <div className="mt-1 p-2 bg-gray-50 border border-gray-300 rounded-md">
+              {paymentData.currency}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
               Amount
             </label>
             <div className="mt-1 p-2 bg-gray-50 border border-gray-300 rounded-md">
-              ₦{paymentData.amount.toLocaleString()}
+              {paymentData.amount.toLocaleString()}
             </div>
           </div>
 
