@@ -12,7 +12,7 @@ const AdminWaitlist = () => {
   useEffect(() => {
     const fetchWaitlist = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "waitlist"));
+        const querySnapshot = await getDocs(collection(db, "DataAnalysisWaitlist"));
         const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setWaitlist(data);
       } catch (error) {
@@ -107,15 +107,17 @@ const AdminWaitlist = () => {
                     >
                       Phone
                     </th>
+
                     <th 
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('interest')}
                     >
-                      <div className="flex items-center">
+                      {/* <div className="flex items-center">
                         Interest
                         <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
+                      </div> */}
                     </th>
+                    
                     <th 
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       onClick={() => handleSort('paymentOption')}
