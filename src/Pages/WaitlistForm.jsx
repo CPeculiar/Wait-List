@@ -44,7 +44,7 @@ const WaitlistForm = () => {
   // Update the amount field based on selected currency
   useEffect(() => {
     if (formData.currency === "NGN") {
-      setFormData((prev) => ({ ...prev, amount: 15000 }));
+      setFormData((prev) => ({ ...prev, amount: 25000 }));
     } else if (exchangeRates[formData.currency]) {
       const convertedAmount = Math.round(15500 * exchangeRates[formData.currency]);
       setFormData((prev) => ({ ...prev, amount: convertedAmount }));
