@@ -17,7 +17,7 @@ const WaitlistForm = () => {
     email: "",
     phone: "",
     currency: "NGN",
-    amount: "15500",
+    amount: "25000",
     paymentOption: "now", 
   });
 
@@ -126,7 +126,7 @@ if (formErrors[name]) {
           email: "",
           phone: "",
           currency: "NGN",
-          amount: "15000",
+          amount: "25000",
           paymentOption: "now",
         });
       }
